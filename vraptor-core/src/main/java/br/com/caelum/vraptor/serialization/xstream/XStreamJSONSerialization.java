@@ -20,6 +20,7 @@ import java.io.Writer;
 
 import javax.servlet.http.HttpServletResponse;
 
+import br.com.caelum.vraptor.deserialization.XStreamBuilder;
 import br.com.caelum.vraptor.interceptor.TypeNameExtractor;
 import br.com.caelum.vraptor.ioc.Component;
 import br.com.caelum.vraptor.serialization.JSONSerialization;
@@ -48,6 +49,7 @@ public class XStreamJSONSerialization implements JSONSerialization {
     protected final HttpServletResponse response;
     protected final TypeNameExtractor extractor;
     protected final ProxyInitializer initializer;
+    protected final XStreamBuilder builder;
     private HierarchicalStreamDriver driver;
     
     private boolean withoutRoot;
@@ -59,10 +61,11 @@ public class XStreamJSONSerialization implements JSONSerialization {
     protected static final String INDENTED_NEW_LINE = "\n";
     protected static final char[] INDENTED_LINE_INDENTER = { ' ', ' '};
 
-    public XStreamJSONSerialization(HttpServletResponse response, TypeNameExtractor extractor, ProxyInitializer initializer) {
+    public XStreamJSONSerialization(HttpServletResponse response, TypeNameExtractor extractor, ProxyInitializer initializer, XStreamBuilder builder) {
         this.response = response;
         this.extractor = extractor;
         this.initializer = initializer;
+        this.builder = builder;
     }
 
     public boolean accepts(String format) {
@@ -93,7 +96,7 @@ public class XStreamJSONSerialization implements JSONSerialization {
 
     protected SerializerBuilder getSerializer() {
         try {
-            return new XStreamSerializer(getXStream(), response.getWriter(), extractor, initializer);
+            return new XStreamSerializer(builder.jsonInstance(getHierarchicalStreamDriver()), response.getWriter(), extractor, initializer);
         } catch (IOException e) {
             throw new ResultException("Unable to serialize data", e);
         }
@@ -102,6 +105,7 @@ public class XStreamJSONSerialization implements JSONSerialization {
     /**
      * You can override this method for configuring XStream before serialization
      */
+    @Deprecated
     protected XStream getXStream() {
         return new XStream(getHierarchicalStreamDriver()) {
             {setMode(NO_REFERENCES);}
